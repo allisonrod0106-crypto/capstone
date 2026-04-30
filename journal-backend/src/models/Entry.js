@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 
 const entrySchema = new mongoose.Schema(
   {
@@ -17,12 +17,19 @@ const entrySchema = new mongoose.Schema(
       required: [true, 'Response is required.'],
       trim: true,
     },
+    goals: {
+      type: [String],
+      default: [],
+    },
+    gratitudes: {
+      type: [String],
+      default: [],
+    },
   },
   { timestamps: true }
-);
+)
 
-// Index for fast per-user lookups and text search
-entrySchema.index({ userId: 1, createdAt: -1 });
-entrySchema.index({ userId: 1, prompt: 'text', response: 'text' });
+entrySchema.index({ userId: 1, createdAt: -1 })
+entrySchema.index({ userId: 1, prompt: 'text', response: 'text' })
 
-module.exports = mongoose.model('Entry', entrySchema);
+module.exports = mongoose.model('Entry', entrySchema)

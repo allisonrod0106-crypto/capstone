@@ -64,4 +64,38 @@ router.get('/', authenticate, async (req, res) => {
   });
 });
 
+// ─── GET /api/entries/today ───────────────────────────────────────────────────
+router.get('/today', authenticate, async (req, res) => {
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  const end = new Date()
+  end.setHours(23, 59, 59, 999)
+
+  const entry = await Entry.findOne({
+    userId: req.user.id,
+    createdAt: { $gte: start, $lte: end },
+  })
+
+  return res.json({ entry })
+})
+
+// ─── PATCH /api/entries/:id ───────────────────────────────────────────────────
+router.patch('/:id', authenticate, async (req, res) => {
+  const entry = await Entry.findOne({ _id: req.params.id, userId: req.user.id })
+
+  if (!entry) {
+    return res.status(404).json({ error: 'Entry not found.' })
+  }
+
+  const { response, goals, gratitudes } = req.body
+
+  if (response !== undefined) entry.response = response
+  if (goals !== undefined) entry.goals = goals
+  if (gratitudes !== undefined) entry.gratitudes = gratitudes
+
+  await entry.save()
+
+  return res.json({ entry })
+})
+
 module.exports = router;
