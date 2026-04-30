@@ -1,30 +1,30 @@
 <template>
-  <div>
-    <h1>Create Account</h1>
+  <div class="page">
+    <h1>📓 Daily Journal</h1>
+    <h2>Create Account</h2>
 
     <form @submit.prevent="handleSubmit">
-      <div>
+      <div class="form-group">
         <label>Username</label>
-        <input v-model="form.username" type="text" placeholder="Username" required />
+        <input v-model="form.username" type="text" placeholder="Your username" required />
       </div>
-
-      <div>
+      <div class="form-group">
         <label>Email</label>
-        <input v-model="form.email" type="email" placeholder="Email" required />
+        <input v-model="form.email" type="email" placeholder="you@example.com" required />
       </div>
-
-      <div>
+      <div class="form-group">
         <label>Password</label>
-        <input v-model="form.password" type="password" placeholder="Password (min 8 chars)" required />
+        <input v-model="form.password" type="password" placeholder="Min 8 characters" required />
       </div>
 
-      <p v-if="error" style="color: red;">{{ error }}</p>
+      <p v-if="error" class="error-msg">{{ error }}</p>
 
       <button type="submit" :disabled="loading">
         {{ loading ? 'Creating account...' : 'Register' }}
       </button>
     </form>
 
+    <div class="divider">——</div>
     <p>Already have an account? <RouterLink to="/login">Log in</RouterLink></p>
   </div>
 </template>
@@ -36,7 +36,6 @@ import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
-
 const form = ref({ username: '', email: '', password: '' })
 const error = ref(null)
 const loading = ref(false)

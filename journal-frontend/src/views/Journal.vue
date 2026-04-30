@@ -1,35 +1,88 @@
 <template>
-  <div>
-    <h1>Today's Journal</h1>
+  <div class="page">
+    <ThemeSwitcher />
+
+    <div class="nav">
+      <h1>📓 Daily Journal</h1>
+      <button class="secondary" @click="handleLogout">Log out</button>
+    </div>
 
     <div v-if="loading">Loading your prompt...</div>
-
-    <div v-else-if="error" style="color: red;">{{ error }}</div>
+    <div v-else-if="error" class="error-msg">{{ error }}</div>
 
     <div v-else>
-      <p><strong>Today's prompt:</strong> {{ prompt }}</p>
 
-      <textarea
-        v-model="response"
-        placeholder="Write your response here..."
-        rows="8"
-        cols="50"
-      ></textarea>
+      <!-- ── Daily Prompt ────────────────────────── -->
+      <div class="prompt-box">
+        <p>✨ {{ prompt }}</p>
+      </div>
 
-      <br />
+      <div class="form-group">
+        <label>Your response</label>
+        <textarea v-model="response" placeholder="Start writing..."></textarea>
+      </div>
 
-      <p v-if="submitError" style="color: red;">{{ submitError }}</p>
-      <p v-if="successMessage" style="color: green;">{{ successMessage }}</p>
+      <!-- ── Gratitudes ──────────────────────────── -->
+      <div class="card">
+        <h2>🙏 Gratitudes</h2>
+        <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 12px;">
+          What are you grateful for today?
+        </p>
+
+        <div
+          v-for="(item, index) in gratitudes"
+          :key="index"
+          class="list-row"
+        >
+          <input
+            v-model="gratitudes[index]"
+            type="text"
+            :placeholder="`Gratitude ${index + 1}`"
+          />
+          <button class="remove-btn" @click="removeGratitude(index)">✕</button>
+        </div>
+
+        <button class="secondary" @click="addGratitude" :disabled="gratitudes.length >= 5">
+          + Add Gratitude
+        </button>
+      </div>
+
+      <!-- ── Goals ──────────────────────────────── -->
+      <div class="card">
+        <h2>🎯 Goals</h2>
+        <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 12px;">
+          What do you want to accomplish today?
+        </p>
+
+        <div
+          v-for="(item, index) in goals"
+          :key="index"
+          class="list-row"
+        >
+          <input
+            v-model="goals[index]"
+            type="text"
+            :placeholder="`Goal ${index + 1}`"
+          />
+          <button class="remove-btn" @click="removeGoal(index)">✕</button>
+        </div>
+
+        <button class="secondary" @click="addGoal" :disabled="goals.length >= 5">
+          + Add Goal
+        </button>
+      </div>
+
+      <p v-if="submitError" class="error-msg">{{ submitError }}</p>
+      <p v-if="successMessage" class="success-msg">{{ successMessage }}</p>
 
       <button @click="handleSubmit" :disabled="submitting">
         {{ submitting ? 'Saving...' : 'Save Entry' }}
       </button>
-    </div>
+      <RouterLink to="/history">
+        <button class="secondary">View History</button>
+      </RouterLink>
 
-    <br />
-    <RouterLink to="/history">View past entries</RouterLink>
-    |
-    <button @click="handleLogout">Log out</button>
+    </div>
   </div>
 </template>
 
@@ -38,12 +91,15 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/axios'
 import { useAuthStore } from '../stores/auth'
+import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
 
 const prompt = ref('')
 const response = ref('')
+const gratitudes = ref([''])
+const goals = ref([''])
 const loading = ref(true)
 const error = ref(null)
 const submitting = ref(false)
@@ -61,21 +117,42 @@ onMounted(async () => {
   }
 })
 
+function addGratitude() {
+  if (gratitudes.value.length < 5) gratitudes.value.push('')
+}
+function removeGratitude(index) {
+  gratitudes.value.splice(index, 1)
+  if (gratitudes.value.length === 0) gratitudes.value.push('')
+}
+
+function addGoal() {
+  if (goals.value.length < 5) goals.value.push('')
+}
+function removeGoal(index) {
+  goals.value.splice(index, 1)
+  if (goals.value.length === 0) goals.value.push('')
+}
+
 async function handleSubmit() {
   if (!response.value.trim()) {
-    submitError.value = 'Please write something before saving.'
+    submitError.value = 'Please write a response to the prompt before saving.'
     return
   }
   submitError.value = null
   successMessage.value = null
   submitting.value = true
+
   try {
     await api.post('/api/entries', {
       prompt: prompt.value,
       response: response.value,
+      gratitudes: gratitudes.value.filter(g => g.trim()),
+      goals: goals.value.filter(g => g.trim()),
     })
-    successMessage.value = 'Entry saved!'
+    successMessage.value = '✅ Entry saved!'
     response.value = ''
+    gratitudes.value = ['']
+    goals.value = ['']
   } catch (err) {
     submitError.value = err.response?.data?.error || 'Failed to save entry.'
   } finally {
