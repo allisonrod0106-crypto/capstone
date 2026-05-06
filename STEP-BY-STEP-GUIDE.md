@@ -342,3 +342,101 @@ Try search: `http://localhost:3000/api/entries?search=grateful`
 | `401 Missing Authorization header` | Token not set or wrong header name |
 | `401 Invalid or expired token` | Token is old — log in again to get a fresh one |
 | `500 Internal server error` | Check terminal — usually a MongoDB or validation issue |
+
+## 11. Front-End Setup (Milestone 3)
+
+### Tech Stack
+- **Vue 3** with Vite
+- **Vue Router** for navigation
+- **Pinia** for state management
+- **Axios** for HTTP requests
+
+---
+
+### Prerequisites
+Make sure the backend is already running before starting the frontend.
+
+---
+
+### Installation
+
+```bash
+# From the capstone folder (one level above journal-backend)
+npm create vite@latest journal-frontend -- --template vue
+cd journal-frontend
+npm install vue-router pinia axios
+```
+
+---
+
+### Folder Structure
+journal-frontend/
+├── src/
+│   ├── api/
+│   │   └── axios.js        # Axios instance with token interceptor
+│   ├── stores/
+│   │   └── auth.js         # Pinia auth store (login, register, logout)
+│   ├── router/
+│   │   └── index.js        # Vue Router with route guards
+│   ├── views/
+│   │   ├── Home.vue
+│   │   ├── Register.vue    # Registration form
+│   │   ├── Login.vue       # Login form
+│   │   ├── Journal.vue     # Daily prompt + entry submission
+│   │   └── History.vue     # Past entries with search
+│   ├── App.vue
+│   └── main.js
+└── package.json
+
+---
+
+### Environment
+
+The frontend expects the backend running at `http://localhost:3000`.
+If you changed the backend port, update `src/api/axios.js` to match.
+
+---
+
+### Running Both Servers
+
+Open two terminal tabs:
+
+```bash
+# Terminal 1 — backend
+cd journal-backend
+npm run dev
+
+# Terminal 2 — frontend
+cd journal-frontend
+npm run dev
+```
+
+Frontend runs at `http://localhost:5173`
+Backend runs at `http://localhost:3000`
+
+---
+
+### Testing the Full User Journey
+
+1. Go to `http://localhost:5173/register`
+2. Create an account — you should land on `/journal`
+3. Read today's prompt and write a response, click **Save Entry**
+4. Click **View past entries** — your entry should appear
+5. Check MongoDB Atlas → `entries` collection to confirm it persisted
+
+---
+
+### Route Guard Behaviour
+
+Protected routes (`/journal`, `/history`) redirect to `/login` if no token is found in localStorage. To test this, open DevTools → Application → Local Storage → delete the `token` entry, then try visiting `/journal` directly.
+
+---
+
+### Common Issues
+
+| Problem | Fix |
+|---|---|
+| Prompt doesn't load | Make sure backend is running on port 3000 |
+| `401` errors on all requests | Token missing or expired — log out and log in again |
+| Port 3000 already in use | Run `kill -9 $(lsof -ti:3000)` then restart backend |
+| CORS error in console | Make sure `cors()` is in `server.js` on the backend |

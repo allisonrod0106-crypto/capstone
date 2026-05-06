@@ -13,7 +13,9 @@ const streaksRouter = require('./routes/streaks');
 // ─── App setup ────────────────────────────────────────────────────────────────
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+}))
 app.use(express.json());
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
