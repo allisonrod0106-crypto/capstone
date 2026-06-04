@@ -440,3 +440,213 @@ Protected routes (`/journal`, `/history`) redirect to `/login` if no token is fo
 | `401` errors on all requests | Token missing or expired — log out and log in again |
 | Port 3000 already in use | Run `kill -9 $(lsof -ti:3000)` then restart backend |
 | CORS error in console | Make sure `cors()` is in `server.js` on the backend |
+
+## 12. Deployment
+
+> Note: This project uses Render (back-end) and Netlify (front-end) instead of Railway and GitHub Pages.
+> Both are free and easier to set up for a monorepo project.
+
+---
+
+### Back-end — Render
+
+1. Push your full repo to GitHub if you haven't already:
+```bash
+   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+   git push -u origin main
+```
+
+2. Go to [render.com](https://render.com) and sign up with your GitHub account
+
+3. Click **New** → **Web Service**
+
+4. Select your GitHub repo
+
+5. Fill in the settings:
+
+   | Setting | Value |
+   |---|---|
+   | Name | `journal-backend` |
+   | Root Directory | `journal-backend` |
+   | Environment | `Node` |
+   | Build Command | `npm install` |
+   | Start Command | `node src/server.js` |
+   | Instance Type | `Free` |
+   | Region | Choose closest to you |
+
+6. Scroll down to **Environment Variables** and add:
+
+   | Key | Value |
+   |---|---|
+   | `MONGODB_URI` | Your full Atlas connection string |
+   | `JWT_SECRET` | Your secret key |
+   | `JWT_EXPIRES_IN` | `7d` |
+   | `NODE_ENV` | `production` |
+   | `FRONTEND_URL` | Add this after you get your Netlify URL |
+
+7. Click **Create Web Service** — Render will build and deploy automatically
+
+8. If the deploy fails with a MongoDB connection error, go to MongoDB Atlas → **Network Access** → **Add IP Address** → **Allow Access from Anywhere** (`0.0.0.0/0`) → **Confirm**, then redeploy
+
+9. Copy your live backend URL from the top of the Render dashboard, it looks like: https://journal-backend.onrender.com
+
+> **Note:** Free Render services spin down after 15 minutes of inactivity and take ~30 seconds to wake up on the first request. This is normal for a free tier.
+
+---
+
+### Setting Environment Variables on Render
+
+To add or update environment variables after deployment:
+
+1. Go to your Render dashboard → click your service
+2. Click the **Environment** tab
+3. Click **Add Environment Variable**
+4. Enter the key and value
+5. Click **Save** — Render redeploys automatically, no manual rebuild needed
+
+---
+
+### Front-end — Netlify
+
+1. Make sure `src/api/axios.js` uses an environment variable for the base URL:
+```js
+   const api = axios.create({
+     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+   })
+```
+
+2. Create `journal-frontend/public/_redirects` with this content: /* /index.html 200
+This is required so Vue Router works on direct URL visits and page refresh.
+
+3. Commit and push both changes:
+```bash
+   git add .
+   git commit -m "configure env variable and add Netlify redirects"
+   git push
+```
+
+4. Go to [netlify.com](https://netlify.com) and sign up with your GitHub account
+
+5. Click **Add new site** → **Import an existing project** → **GitHub**
+
+6. Select your repo and fill in the build settings:
+
+   | Setting | Value |
+   |---|---|
+   | Base directory | `journal-frontend` |
+   | Build command | `npm run build` |
+   | Publish directory | `journal-frontend/dist` |
+
+7. Click **Add environment variables** and add:
+
+   | Key | Value |
+   |---|---|
+   | `VITE_API_URL` | Your Render backend URL |
+
+8. Click **Deploy site** — after ~2 minutes you'll get a live URL like: This is required so Vue Router works on direct URL visits and page refresh.
+
+3. Commit and push both changes:
+```bash
+   git add .
+   git commit -m "configure env variable and add Netlify redirects"
+   git push
+```
+
+4. Go to [netlify.com](https://netlify.com) and sign up with your GitHub account
+
+5. Click **Add new site** → **Import an existing project** → **GitHub**
+
+6. Select your repo and fill in the build settings:
+
+   | Setting | Value |
+   |---|---|
+   | Base directory | `journal-frontend` |
+   | Build command | `npm run build` |
+   | Publish directory | `journal-frontend/dist` |
+
+7. Click **Add environment variables** and add:
+
+   | Key | Value |
+   |---|---|
+   | `VITE_API_URL` | Your Render backend URL |
+
+8. Click **Deploy site** — after ~2 minutes you'll get a live URL like: This is required so Vue Router works on direct URL visits and page refresh.
+
+3. Commit and push both changes:
+```bash
+   git add .
+   git commit -m "configure env variable and add Netlify redirects"
+   git push
+```
+
+4. Go to [netlify.com](https://netlify.com) and sign up with your GitHub account
+
+5. Click **Add new site** → **Import an existing project** → **GitHub**
+
+6. Select your repo and fill in the build settings:
+
+   | Setting | Value |
+   |---|---|
+   | Base directory | `journal-frontend` |
+   | Build command | `npm run build` |
+   | Publish directory | `journal-frontend/dist` |
+
+7. Click **Add environment variables** and add:
+
+   | Key | Value |
+   |---|---|
+   | `VITE_API_URL` | Your Render backend URL |
+
+8. Click **Deploy site** — after ~2 minutes you'll get a live URL like: https://rad-horse-f722f0.netlify.app
+---
+
+### Linking the Front-end to the Back-end
+
+The frontend talks to the backend via the `VITE_API_URL` environment variable set in Netlify. Every API request from the Vue app is automatically sent to your Render backend URL.
+
+To update the backend URL the frontend points to:
+1. Go to Netlify → your site → **Site configuration** → **Environment variables**
+2. Update `VITE_API_URL`
+3. Go to **Deploys** → **Trigger deploy** → **Deploy site** to rebuild with the new value
+
+---
+
+### CORS Configuration
+
+The backend must explicitly allow requests from the frontend URL. In `src/server.js`:
+
+```js
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+}))
+```
+
+After deploying the frontend, add `FRONTEND_URL` to your Render environment variables:
+
+| Key | Value |
+|---|---|
+| `FRONTEND_URL` | Your Netlify URL |
+
+Render redeploys automatically after saving. Without this, the browser will block all API requests from the frontend with a CORS error.
+
+---
+
+### Verifying the Full Deployment
+
+1. Visit your Netlify URL
+2. Register a new account
+3. Write a journal entry, save the response, gratitudes, and goals
+4. Click View History — your entry should appear
+5. Check MongoDB Atlas → Browse Collections → `entries` — the document should be there
+
+---
+
+### Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| Render deploy fails with MongoDB error | Allow all IPs in Atlas Network Access |
+| Frontend shows blank page on refresh | Make sure `_redirects` file exists in `public/` |
+| API requests blocked with CORS error | Add `FRONTEND_URL` to Render environment variables |
+| Backend takes 30s to respond | Normal for free Render tier — it's waking up from sleep |
+| Netlify build fails | Check the Base directory is set to `journal-frontend` |
